@@ -1,3 +1,11 @@
-﻿  OET-Demo.cpp
+﻿  sdca.cpp
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(15): warning C4101: 'lat_c': unreferenced local variable
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(16): warning C4101: 'lon_c': unreferenced local variable
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(17): warning C4101: 'time_c': unreferenced local variable
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(457): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(491): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(554): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(651): warning C4244: 'argument': conversion from 'double' to 'unsigned __int64', possible loss of data
+c:\users\blacklong617\documents\visual studio 2015\projects\oet-demo\oet-demo\sdca.cpp(653): warning C4244: 'argument': conversion from 'double' to '__int64', possible loss of data
   OET-Demo.vcxproj -> C:\Users\blacklong617\documents\visual studio 2015\Projects\OET-Demo\x64\Debug\OET-Demo.exe
   OET-Demo.vcxproj -> C:\Users\blacklong617\documents\visual studio 2015\Projects\OET-Demo\x64\Debug\OET-Demo.pdb (Full PDB)

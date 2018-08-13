@@ -6,10 +6,16 @@
 int main()
 {
 	printf("Demo start!\n");
-	vector<celldata> mdata;
-	mdata = loadData("D:\\OET\\data_output_n_w.txt");
+	vector<celldata> original_data;
+	vector<celldata> cut_data;
+	original_data = loadData("D:\\OET\\data_output_n_ls.txt");
 	printf("load end!\n");
-	sdDetect20(mdata);
+	cut_data=cutData(original_data);
+	//printf("core ==%d!\n",res);
+	//if (res == 0) {
+		sdDetect20(cut_data);
+	//}
+	
 	
 	/*
 	double param, result;
