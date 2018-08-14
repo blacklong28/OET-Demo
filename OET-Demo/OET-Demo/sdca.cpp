@@ -4,11 +4,11 @@
 #include <math.h>
 #include<algorithm>
 using namespace std;
-vector<celldata> incsv;
+
 float mid_z1=0;
 float mid_z2=0;
 vector<celldata> loadData(const char* filename){
-	
+	vector<celldata> incsv;
 	celldata intp;
 	FILE *fp;
 	fp = fopen(filename,"r");
@@ -25,6 +25,8 @@ vector<celldata> loadData(const char* filename){
 		fscanf(fp, "%d	%f	%f	%s	%s	%s\n", &intp.num, &intp.z1, &intp.z2, &intp.lat, &intp.lon, &intp.time);
 		intp.num = i;
 		incsv.push_back(intp);
+		string time;
+		time = intp.time;
 		//cout << i << " " << incsv[i].z1 << " " << incsv[i].z2 << " " << incsv[i].lat << " " << incsv[i].lon<<" " << incsv[i].time << " " << endl;
 		i++;
 		if (feof(fp))break;
@@ -32,208 +34,16 @@ vector<celldata> loadData(const char* filename){
 	fclose(fp);
 	return incsv;
 }
-
-void sdDetect(vector<celldata> vecdata) {
-	if (vecdata.size() < 1) {
-		printf("data size error!\n");
-		return;
-	}
+int findFunPoint(vector<celldata> vecdata, vector<fun_point> &fun_points) {
 	vector <celldata> element;
 	float sq1 = 0;
 	float sq2 = 0;
 	float sh1 = 0;
 	float sh2 = 0;
-	vector<int> start1;
-	vector<int> end1;
-	vector<int> start2;
-	vector<int> end2;
+	//vector<fun_point> fun_points;//存放初始兴趣点
+	fun_point point;//兴趣点
 
-	vector<int> check_start1;
-	vector<int> check_end1;
-	vector<int> check_start2;
-	vector<int> check_end2;
-
-
-	vector<int> findTP;
-	vector<fun_point> fun_points;
-	vector<fun_point> start;
-	vector<fun_point> end;
-	//vector<fun_point,fun_point> fun_regions;
-	fun_point point;
-	for (int i = 0; i+9<vecdata.size(); i=i+5)//size()容器中实际数据个数 
-	{
-		//cout << vecdata[i].z1 << " " << vecdata[i].z2 << " " << vecdata[i].time << " " << vecdata[i].lat << " " << vecdata[i].lon << endl;
-		//copy(vecdata[i], vecdata[i+10], element.begin());
-		element.assign(vecdata.begin()+i, vecdata.begin()+i+10);
-		//printf("element debug!\n");
-		/*分析element的10组数据*/
-		//
-		//
-		//for(i=1,i<)
-		sh1 = 0;
-		sh2 = 0;
-		for (auto it = element.begin(); it != element.end(); it++) {
-
-			sh1 = sh1+(*it).z1;
-			sh2 = sh2 + (*it).z2;
-		}
-		sh1 = sh1 / 10;
-		sh2 = sh2 / 10;
-		/*
-		*###sh1-sq1 sh2-sq2：一条线前后差
-		*###sq2 - sq1：两条线前差
-		*###sh2 - sh1：两条线后差									
-		*/
-		if (i == 0) {
-			sq1 = sh1;
-			sq2 = sh2;
-		}
-		else {
-			/*
-			if ( ((abs(sh1 - sq1) >= 10) ||  (abs(sh2 - sq2) >= 10) ) && (abs(sh2-sh1)>=100) &&  (abs(sq2 - sq1) <= 10) ) {
-				printf("Waring i=%d\n", element[1].num);
-				printf("sh1=%f,sq1=%f,sh2=%f,sq2=%f\n",sh1,sq1,sh2,sq2);
-			}
-			*/
-			if ( (abs(sh1 - sq1) >= 5) && (abs(sh2 - sq2) <= 1) && (abs(sq2 - sq1) < 10) && (abs(sh2 - sh1) > 1) ){
-				if ((sh1 + sh2 + sq1 + sq2) >= 950) {
-					printf("start1 i=%d", element[1].num);
-					//start1.push_back(i);
-					findTP.push_back(i);
-					//存入兴趣点
-					point.num = element[1].num;
-					point.lineID = 1;
-					point.point_class = 1;
-					point.sh1 = sh1;
-					point.sq1 = sq1;
-					point.sh2 = sh2;
-					point.sq2 = sq2;
-					fun_points.push_back(point);
-
-					printf(" sq1=%f,sh1=%f,sq2=%f,sh2=%f\n", sq1, sh1, sq2, sh2);
-				}
-			}//(abs(sh2 - sh1) < 1) &&   && (abs(sh2 - sh1) < 1)
-			else if ( (abs(sh1 - sq1) >= 5) && (abs(sh2 - sq2) <= 1) && (abs(sh2 - sh1) < 10) && (abs(sq2 - sq1) > 1) ) {
-				if ((sh1 + sh2 + sq1 + sq2) >= 950) {
-					/*
-					*###sh1-sq1 sh2-sq2：一条线前后差
-					*###sq2 - sq1：两条线前差
-					*###sh2 - sh1：两条线后差
-					*/
-					//end1.push_back(i);
-					findTP.push_back(i);
-					//存入兴趣点
-					point.num = element[1].num;
-					point.lineID = 1;
-					point.point_class = 2;
-					point.sh1 = sh1;
-					point.sq1 = sq1;
-					point.sh2 = sh2;
-					point.sq2 = sq2;
-					fun_points.push_back(point);
-
-					printf("end1   i=%d", element[1].num);
-					printf(" sq1=%f,sh1=%f,sq2=%f,sh2=%f\n", sq1, sh1, sq2, sh2);
-				}
-			}
-			else if( (abs(sh2 - sq2) >= 5) && (abs(sh1 - sq1) <= 1) && (abs(sq2 - sq1) < 10) && (abs(sh2 - sh1) > 1)){
-				if ((sh1 + sh2 + sq1 + sq2) >= 950) {
-					printf("start2 i=%d", element[1].num);
-					//start2.push_back(i);
-					findTP.push_back(i);
-					//存入兴趣点
-					point.num = element[1].num;
-					point.lineID = 2;
-					point.point_class = 1;
-					point.sh1 = sh1;
-					point.sq1 = sq1;
-					point.sh2 = sh2;
-					point.sq2 = sq2;
-					fun_points.push_back(point);
-					printf(" sq1=%f,sh1=%f,sq2=%f,sh2=%f\n", sq1, sh1, sq2, sh2);
-				}
-
-			}
-			else if ((abs(sh2 - sq2) >= 5) && (abs(sh1 - sq1) <= 1) && (abs(sq2 - sq1) > 1) && (abs(sh2 - sh1) < 10)) {
-				if ((sh1 + sh2 + sq1 + sq2) >= 950) {
-					printf("end2   i=%d", element[1].num);
-					//end2.push_back(i);
-					findTP.push_back(i);
-					//存入兴趣点
-					point.num = element[1].num;
-					point.lineID = 2;
-					point.point_class = 2;
-					point.sh1 = sh1;
-					point.sq1 = sq1;
-					point.sh2 = sh2;
-					point.sq2 = sq2;
-					fun_points.push_back(point);
-					printf(" sq1=%f,sh1=%f,sq2=%f,sh2=%f\n", sq1, sh1, sq2, sh2);
-				}
-			}
-			sq1 = sh1;
-			sq2 = sh2;
-
-		}
-
-		}
-		int k = 1;
-		printf("debug\n");
-		for (int i = 0; i+2<fun_points.size(); i++) {
-			//各种情况分析（前提，数据已经去除掉非轨面部分）
-			//情况一：数据开头就为end，此情况需要
-			//情况二：数据开头为start，下一个为同一条线的end，这种情况需要分析区间均值、区间宽度
-			//若再下一个也为end，需要分析两个的sh，若后一个更接近start的sq，则将下一个end点去除。
-			//情况三：数据开头为start，下一个为其他线的end
-			if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 2 && fun_points[i + 2].point_class == 2) {
-				fun_points.erase(fun_points.begin() + i+1);
-				k++;
-			//	i = i + 1;
-				//printf(" num=%d\n", fun_regions[k], sh1, sq2, sh2);
-			}
-			else if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 2 && fun_points[i + 2].point_class == 1) {
-
-				k++;
-			}
-
-		
-		
-		}
-		for (int i = 0; i < fun_points.size(); i++) {
-			printf("num=%d,lineID=%d,point_class=%d,sq1=%f,sh1=%f,sq2=%f,sh2=%f\n",
-				fun_points[i].num, fun_points[i].lineID, fun_points[i].point_class, fun_points[i].sq1, fun_points[i].sh1, fun_points[i].sq2, fun_points[i].sh2);
-		}
-
-}
-void sdDetect20(vector<celldata> vecdata) {
-	if (vecdata.size() < 1) {
-		printf("data size error!\n");
-		return;
-	}
-	vector <celldata> element;
-	float sq1 = 0;
-	float sq2 = 0;
-	float sh1 = 0;
-	float sh2 = 0;
-	vector<int> start1;
-	vector<int> end1;
-	vector<int> start2;
-	vector<int> end2;
-
-	vector<int> check_start1;
-	vector<int> check_end1;
-	vector<int> check_start2;
-	vector<int> check_end2;
-
-
-	vector<int> findTP;
-	vector<fun_point> fun_points;
-	vector<DetectPoint> Result_Points;
-	//vector<fun_point> start;
-	//vector<fun_point> end;
-	vector<fun_point> ex_points;
-	fun_point point;
-	//查找兴趣点
+	//查找兴趣点存放于fun_points
 	for (int i = 0; i + 19<vecdata.size(); i = i + 10)//size()容器中实际数据个数 
 	{
 		//cout << vecdata[i].z1 << " " << vecdata[i].z2 << " " << vecdata[i].time << " " << vecdata[i].lat << " " << vecdata[i].lon << endl;
@@ -241,9 +51,6 @@ void sdDetect20(vector<celldata> vecdata) {
 		element.assign(vecdata.begin() + i, vecdata.begin() + i + 20);
 		//printf("element debug!\n");
 		/*分析element的10组数据*/
-		//
-		//
-		//for(i=1,i<)
 		sh1 = 0;
 		sh2 = 0;
 		for (auto it = element.begin(); it != element.end(); it++) {
@@ -275,12 +82,18 @@ void sdDetect20(vector<celldata> vecdata) {
 					printf("start1 i=%d", element[1].num);
 #endif
 					//start1.push_back(i);
-					findTP.push_back(i);
+					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
-					memcpy(point.lon, element[1].lon, strlen(element[1].lon));
-					memcpy(point.lat, element[1].lat, strlen(element[1].lat));
-					memcpy(point.time, element[1].time, strlen(element[1].time));
+					strcpy(point.lon, element[1].lon);
+					strcpy(point.lat, element[1].lat);
+					strcpy(point.time, element[1].time);
+					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
+					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 1;
 					point.point_class = 1;
 					point.sh1 = sh1;
@@ -301,12 +114,19 @@ void sdDetect20(vector<celldata> vecdata) {
 					*###sh2 - sh1：两条线后差
 					*/
 					//end1.push_back(i);
-					findTP.push_back(i);
+					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
-					memcpy(point.lon, element[1].lon, strlen(element[1].lon));
-					memcpy(point.lat, element[1].lat, strlen(element[1].lat));
-					memcpy(point.time, element[1].time, strlen(element[1].time));
+					//point.lon = element[1].lon;
+					strcpy(point.lon, element[1].lon);
+					strcpy(point.lat, element[1].lat);
+					strcpy(point.time, element[1].time);
+					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
+					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 1;
 					point.point_class = 2;
 					point.sh1 = sh1;
@@ -326,12 +146,18 @@ void sdDetect20(vector<celldata> vecdata) {
 					printf("start2 i=%d", element[1].num);
 #endif
 					//start2.push_back(i);
-					findTP.push_back(i);
+					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
-					memcpy(point.lon, element[1].lon, strlen(element[1].lon));
-					memcpy(point.lat, element[1].lat, strlen(element[1].lat));
-					memcpy(point.time, element[1].time, strlen(element[1].time));
+					strcpy(point.lon, element[1].lon);
+					strcpy(point.lat, element[1].lat);
+					strcpy(point.time, element[1].time);
+					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
+					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 2;
 					point.point_class = 1;
 					point.sh1 = sh1;
@@ -351,12 +177,15 @@ void sdDetect20(vector<celldata> vecdata) {
 					printf("end2   i=%d", element[1].num);
 #endif
 					//end2.push_back(i);
-					findTP.push_back(i);
+					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
-					memcpy(point.lon, element[1].lon, strlen(element[1].lon));
-					memcpy(point.lat, element[1].lat, strlen(element[1].lat));
-					memcpy(point.time, element[1].time, strlen(element[1].time));
+					strcpy(point.lon, element[1].lon);
+					strcpy(point.lat, element[1].lat);
+					strcpy(point.time, element[1].time);
+					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
+					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
+					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 2;
 					point.point_class = 2;
 					point.sh1 = sh1;
@@ -375,19 +204,16 @@ void sdDetect20(vector<celldata> vecdata) {
 		}
 
 	}
-	//处理得到的兴趣点
-	//NEED UPDATE!!!
-	//Waring:越界问题
+	return 0;
+}
+int handleFunPoint(vector<fun_point> &fun_points) {
+	//情况一：
 	for (int i = 0; i + 2<fun_points.size(); i++) {
-		//各种情况分析（前提，数据已经去除掉非轨面部分）
-		//情况一：数据开头就为end，此情况需要
-		//情况二：数据开头为start，下一个为同一条线的end，这种情况需要分析区间均值、区间宽度
-		//若再下一个也为end，需要分析两个的sh，若后一个更接近start的sq，则将下一个end点去除。
-		//情况三：数据开头为start，下一个为其他线的end
+
 		if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 2 && fun_points[i + 2].point_class == 2) {
 			//fun_points.erase(fun_points.begin() + i + 1);
-			if ((fun_points[i + 1].num - fun_points[i + 2].num) < 300&& 
-				fun_points[i].lineID== fun_points[i+1].lineID&&fun_points[i + 1].lineID == fun_points[i+2].lineID) {
+			if ((fun_points[i + 1].num - fun_points[i + 2].num) < 300 &&
+				fun_points[i].lineID == fun_points[i + 1].lineID&&fun_points[i + 1].lineID == fun_points[i + 2].lineID) {
 #ifdef DEBUG
 				printf("end-end distance less than 300*0.17mm!!\n");
 #endif
@@ -397,15 +223,12 @@ void sdDetect20(vector<celldata> vecdata) {
 		}
 
 	}
+	//情况二
 	for (int i = 0; i + 2<fun_points.size(); i++) {
-		//各种情况分析（前提，数据已经去除掉非轨面部分）
-		//情况一：数据开头就为end，此情况需要
-		//情况二：数据开头为start，下一个为同一条线的end，这种情况需要分析区间均值、区间宽度
-		//若再下一个也为end，需要分析两个的sh，若后一个更接近start的sq，则将下一个end点去除。
-		//情况三：数据开头为start，下一个为其他线的end
+
 		if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 1 && fun_points[i + 2].point_class == 2) {
 			//fun_points.erase(fun_points.begin() + i + 1);
-			if ((fun_points[i ].num - fun_points[i + 1].num) < 300 &&
+			if ((fun_points[i].num - fun_points[i + 1].num) < 300 &&
 				fun_points[i].lineID == fun_points[i + 1].lineID&&fun_points[i + 1].lineID == fun_points[i + 2].lineID) {
 #ifdef DEBUG
 				printf("start-start distance less than 300*0.17mm!!\n");
@@ -416,28 +239,54 @@ void sdDetect20(vector<celldata> vecdata) {
 		}
 
 	}
+	//情况三
 	for (int i = 0; i + 1 < fun_points.size(); i++) {
 
 		if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 2) {
-			if (abs(fun_points[i+1].num - fun_points[i].num) < 100&&
+			if (abs(fun_points[i + 1].num - fun_points[i].num) < 100 &&
 				fun_points[i].lineID == fun_points[i + 1].lineID) {
 #ifdef DEBUG
 				printf("start-end distance less than 100*0.17mm!!\n");
 #endif
-				//进一步判断是否type为CONNECTOR_JOINT
-				//for(int j = fun_points[i].num;)
 
 			}
 		}
 
 	}
-	//
+	return 0;
+
+}
+void sdDetect20(vector<celldata> vecdata) {
+	if (vecdata.size() < 1) {
+		printf("data size error!\n");
+		return;
+	}
+	vector<DetectPoint> Result_Points;//存放结果
+	vector<fun_point> ex_points;//存放扫描排除点
+	vector<fun_point> fun_points;//存放兴趣点
+	//vector<fun_point> fun_points_init;//存放兴趣点
+	int err = findFunPoint(vecdata, fun_points);
+
+	/**处理得到的兴趣点
+	**NEED UPDATE!!!
+	**对各种情况的兴趣点进行分析（前提，数据已去除掉非轨面部分）
+	**情况一：数据为start-end-end型
+	**情况二：数据为start-start-end型
+	**情况三：数据为start-end-start型，不处理 
+	**处理的变量：fun_points
+	**/
+	int res = handleFunPoint(fun_points);
+
+	
 	float sdq = 0;//检测项前面深度值
 	float sdh = 0;//检测项后面深度值
 	//printf("start sd\n");
 	for (int i = 0; i < fun_points.size()-1; i++) {
 		DetectPoint resultpoint;
 		resultpoint.loc_num = i;
+		//string lat = fun_points[i].lat;
+		//int lat_len = strlen(fun_points[i].lat);
+		//lat.resize(10);
 		resultpoint.latitude = fun_points[i].lat;
 		resultpoint.longitude = fun_points[i].lon;
 		//printf("num=%d,lineID=%d,point_class=%d,sq1=%f,sh1=%f,sq2=%f,sh2=%f\n",
@@ -522,56 +371,175 @@ void sdDetect20(vector<celldata> vecdata) {
 			else {
 				resultpoint.qualified = false;
 			}
-			printf("sdq=%f,sdh=%f,type==%d,measure_value=%f,qualified==%d\n", sdq, sdh,resultpoint.type, resultpoint.measure_value, resultpoint.qualified);
+			Result_Points.push_back(resultpoint);
+			printf("sdq=%f,sdh=%f,type==%d,measure_value=%f,qualified==%d,lon==%s\n", sdq, sdh,resultpoint.type, resultpoint.measure_value, resultpoint.qualified, resultpoint.longitude.c_str());
 			sdq = 0;
 			sdh = 0;
 		
 	}
 	//扫描异常点
 	//扫描点前100个点均值与后100个点均值的面差
-	//
+	//计算参数
+	//输入参数：ex_points、vecdata、resultpoint指针（引用）
+	//输出参数：resultpoint
 
-	for (vector<fun_point>::iterator it = ex_points.begin(); it != ex_points.end(); it++) {
+	float threshold_mean = 0.1;//均值带前后阈值 阈值越大要求前后面相差越大。
+	float threshold_variance = 0.125;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
+	int sd = 50;//均值带
+	int ed = 5;//缓冲带
+
+	float sum_z1_q = 0;
+	float sum_z1_h = 0;
+	float sum_z2_q = 0;
+	float sum_z2_h = 0;
+	float mean_z1_q = 0;
+	float mean_z1_h = 0;
+	float mean_z2_q = 0;
+	float mean_z2_h = 0;
+	float variance_z1_q = 0;
+	float variance_z1_h = 0;
+	float variance_z2_q = 0;
+	float variance_z2_h = 0;
+	for (int i=0; i+2<= ex_points.size(); i++) {
 		//第一个区域
-		float sum_z1_q=0;
-		float sum_z1_h=0;
-		float sum_z2_q=0;
-		float sum_z2_h=0;
-		if (it == ex_points.begin()) {
-			for (int s = 120; s + 121 < it->num; s++) {
+		if (i ==0) {
+			for (int s = sd+ed; s + sd+ed+1 < ex_points[i].num; s=s+20) {
 				//float sum = 0;
 				sum_z1_q = 0;
 				sum_z1_h = 0;
 				sum_z2_q = 0;
 				sum_z2_h = 0;
-				for (int c = s-120; c < s - 20;c++) {
+				mean_z1_q = 0;
+				mean_z1_h = 0;
+				mean_z2_q = 0;
+				mean_z2_h = 0;
+				variance_z1_q = 0;
+				variance_z1_h = 0;
+				variance_z2_q = 0;
+				variance_z2_h = 0;
+				for (int c = s-(sd+ed); c < s - ed;c++) {
 					sum_z1_q = sum_z1_q + vecdata[c].z1;
 					sum_z2_q = sum_z2_q + vecdata[c].z2;
 				}
-				for (int c = s+20; c < s + 120; c++) {
+				for (int c = s+ed; c < s + sd+ed; c++) {
 					sum_z1_h = sum_z1_h + vecdata[c].z1;
 					sum_z2_h = sum_z2_h + vecdata[c].z2;
 				}
-				if (abs(sum_z1_q / 100 - sum_z1_h / 100) >= 0.2&&abs(sum_z2_q / 100 - sum_z2_h / 100) >= 0.2) {
-					printf("sss==%d\n", s);
+				mean_z1_q = sum_z1_q / sd;
+				mean_z1_h = sum_z1_h / sd;
+				mean_z2_q = sum_z2_q / sd;
+				mean_z2_h = sum_z2_h / sd;
+				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
+					for (int c = s - (sd+ed); c < s - ed; c++) {
+						variance_z1_q = variance_z1_q+pow(abs(vecdata[c].z1- mean_z1_q),2);
+						variance_z2_q = variance_z2_q+pow(abs(vecdata[c].z2 - mean_z2_q), 2);
+					}
+					for (int c = s + ed; c < s + sd+ed; c++) {
+						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
+						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
+					}
+					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance&&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+						printf("sss==%d\n", s);
+					}
+
+					s = s + 199;
 				}
 
 			}
 		}
-		else {
-			for (int s = 120; s + 121 < it->num; s++) {
+		else if (i== ex_points.size()-1) {//最后一个区域
+			for (int s = ex_points[i].num+sd+ed; s + sd+ed+1 < vecdata.size()-1; s = s + 20) {
 				//float sum = 0;
-				for (int c = 0; c < s - 20; c++) {
+				sum_z1_q = 0;
+				sum_z1_h = 0;
+				sum_z2_q = 0;
+				sum_z2_h = 0;
+				mean_z1_q = 0;
+				mean_z1_h = 0;
+				mean_z2_q = 0;
+				mean_z2_h = 0;
+				variance_z1_q = 0;
+				variance_z1_h = 0;
+				variance_z2_q = 0;
+				variance_z2_h = 0;
+				for (int c = s - (sd+ed); c < s - ed; c++) {
 					sum_z1_q = sum_z1_q + vecdata[c].z1;
 					sum_z2_q = sum_z2_q + vecdata[c].z2;
 				}
-				for (int c = s + 20; c < s + 120; c++) {
+				for (int c = s + ed; c < s + ed+sd; c++) {
 					sum_z1_h = sum_z1_h + vecdata[c].z1;
 					sum_z2_h = sum_z2_h + vecdata[c].z2;
 				}
+				mean_z1_q = sum_z1_q / sd;
+				mean_z1_h = sum_z1_h / sd;
+				mean_z2_q = sum_z2_q / sd;
+				mean_z2_h = sum_z2_h / sd;
+				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
+					for (int c = s - (sd+ed); c < s - ed; c++) {
+						variance_z1_q = variance_z1_q + pow(abs(vecdata[c].z1 - mean_z1_q), 2);
+						variance_z2_q = variance_z2_q + pow(abs(vecdata[c].z2 - mean_z2_q), 2);
+					}
+					for (int c = s + ed; c < s + ed+sd; c++) {
+						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
+						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
+					}
+					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance &&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+						printf("sss==%d\n", s);
+					}
+					s = s + 199;
+				}
+
 			}
+
 		}
-		//其他区域
+		else{//其他区域
+			for (int s = ex_points[i].num+ed+sd; s + ed+sd+1 < ex_points[i+1].num; s++) {
+				sum_z1_q = 0;
+				sum_z1_h = 0;
+				sum_z2_q = 0;
+				sum_z2_h = 0;
+				mean_z1_q = 0;
+				mean_z1_h = 0;
+				mean_z2_q = 0;
+				mean_z2_h = 0;
+				variance_z1_q = 0;
+				variance_z1_h = 0;
+				variance_z2_q = 0;
+				variance_z2_h = 0;
+				for (int c = s - (sd+ed); c < s - ed; c++) {
+					sum_z1_q = sum_z1_q + vecdata[c].z1;
+					sum_z2_q = sum_z2_q + vecdata[c].z2;
+				}
+				for (int c = s + ed; c < s + sd+ed; c++) {
+					sum_z1_h = sum_z1_h + vecdata[c].z1;
+					sum_z2_h = sum_z2_h + vecdata[c].z2;
+				}
+				mean_z1_q = sum_z1_q / sd;
+				mean_z1_h = sum_z1_h / sd;
+				mean_z2_q = sum_z2_q / sd;
+				mean_z2_h = sum_z2_h / sd;
+				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
+					for (int c = s - (sd+ed); c < s - ed; c++) {
+						variance_z1_q = variance_z1_q + pow(abs(vecdata[c].z1 - mean_z1_q), 2);
+						variance_z2_q = variance_z2_q + pow(abs(vecdata[c].z2 - mean_z2_q), 2);
+					}
+					for (int c = s + ed; c < s + ed+sd; c++) {
+						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
+						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
+					}
+					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance &&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+						printf("sss==%d\n", s);
+					}
+					s = s + 199;
+				}
+				
+			}
+			i++;
+		}
+
 
 	}
 }

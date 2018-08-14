@@ -43,7 +43,8 @@ typedef struct {
 	bool qualified;             //ÊÇ·ñºÏ¸ñ
 }DetectPoint;
 vector<celldata> loadData(const char* filename);
-void sdDetect(vector<celldata> vecdata);
+int findFunPoint(vector<celldata> vecdata, vector<fun_point> &fun_points);
+int handleFunPoint(vector<fun_point>& fun_points);
 void sdDetect20(vector<celldata> vecdata);
 vector<celldata> cutData(vector<celldata>);
 

@@ -8,7 +8,7 @@ int main()
 	printf("Demo start!\n");
 	vector<celldata> original_data;
 	vector<celldata> cut_data;
-	original_data = loadData("D:\\OET\\data_output_n_ls.txt");
+	original_data = loadData("D:\\OET\\data_output_n.txt");
 	printf("load end!\n");
 	cut_data=cutData(original_data);
 	//printf("core ==%d!\n",res);
