@@ -531,22 +531,49 @@ void sdDetect20(vector<celldata> vecdata) {
 	//扫描点前100个点均值与后100个点均值的面差
 	//
 
-	//for (vector<fun_point>::iterator it = ex_points.begin(); it != ex_points.end(); it++) {
-	//	//第一个区域
-	//	if (it == ex_points.begin()) {
-	//		for (int s = 120; s + 121 < it->num; s++) {
-	//			float sum = 0;
-	//			for (int c = 0; c < s + 100;c++) {
-	//				sum = sum + vecdata[c].z1;
+	for (vector<fun_point>::iterator it = ex_points.begin(); it != ex_points.end(); it++) {
+		//第一个区域
+		float sum_z1_q=0;
+		float sum_z1_h=0;
+		float sum_z2_q=0;
+		float sum_z2_h=0;
+		if (it == ex_points.begin()) {
+			for (int s = 120; s + 121 < it->num; s++) {
+				//float sum = 0;
+				sum_z1_q = 0;
+				sum_z1_h = 0;
+				sum_z2_q = 0;
+				sum_z2_h = 0;
+				for (int c = s-120; c < s - 20;c++) {
+					sum_z1_q = sum_z1_q + vecdata[c].z1;
+					sum_z2_q = sum_z2_q + vecdata[c].z2;
+				}
+				for (int c = s+20; c < s + 120; c++) {
+					sum_z1_h = sum_z1_h + vecdata[c].z1;
+					sum_z2_h = sum_z2_h + vecdata[c].z2;
+				}
+				if (abs(sum_z1_q / 100 - sum_z1_h / 100) >= 0.2&&abs(sum_z2_q / 100 - sum_z2_h / 100) >= 0.2) {
+					printf("sss==%d\n", s);
+				}
 
-	//			}
+			}
+		}
+		else {
+			for (int s = 120; s + 121 < it->num; s++) {
+				//float sum = 0;
+				for (int c = 0; c < s - 20; c++) {
+					sum_z1_q = sum_z1_q + vecdata[c].z1;
+					sum_z2_q = sum_z2_q + vecdata[c].z2;
+				}
+				for (int c = s + 20; c < s + 120; c++) {
+					sum_z1_h = sum_z1_h + vecdata[c].z1;
+					sum_z2_h = sum_z2_h + vecdata[c].z2;
+				}
+			}
+		}
+		//其他区域
 
-	//		}
-
-	//	}
-	//	//其他区域
-
-	//}
+	}
 }
 
 vector<celldata> cutData(vector<celldata> original_data) {
