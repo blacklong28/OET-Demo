@@ -11,6 +11,9 @@ int loadData(const char* filename){
 	CellData intp;
 	FILE *fp;
 	fp = fopen(filename,"r");
+	if (fp == NULL) {
+		return OPEN_DATA_ERROR;
+	}
 	int i = 0;
 	while (1) {
 		fscanf(fp, "%d	%f	%f	%s	%s	%s\n", &intp.num, &intp.z1, &intp.z2, &intp.lat, &intp.lon, &intp.time);
@@ -21,8 +24,11 @@ int loadData(const char* filename){
 		if (feof(fp))break;
 	}
 	fclose(fp);
+	if (original_data.size() <= 0) {
+		return LOAD_DATA_ERROR;
+	}
 	datalist =cutData(original_data);
-	return 0;
+	return SUCCESS;
 }
 int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 	vector <CellData> element;
@@ -30,14 +36,12 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 	float sq2 = 0;
 	float sh1 = 0;
 	float sh2 = 0;
-	//vector<fun_point> fun_points;//存放初始兴趣点
+
 	fun_point point;//兴趣点
 
-	//查找兴趣点存放于fun_points
+	//查找兴趣点存放于fun_points 宽度为20的滑条，前后滑块距离为10，通过计算前后滑块面差判断是否为边界点
 	for (int i = 0; i + 19<vecdata.size(); i = i + 10)//size()容器中实际数据个数 
 	{
-		//cout << vecdata[i].z1 << " " << vecdata[i].z2 << " " << vecdata[i].time << " " << vecdata[i].lat << " " << vecdata[i].lon << endl;
-		//copy(vecdata[i], vecdata[i+10], element.begin());
 		element.assign(vecdata.begin() + i, vecdata.begin() + i + 20);
 		//printf("element debug!\n");
 		/*分析element的10组数据*/
@@ -60,12 +64,7 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 			sq2 = sh2;
 		}
 		else {
-			/*
-			if ( ((abs(sh1 - sq1) >= 10) ||  (abs(sh2 - sq2) >= 10) ) && (abs(sh2-sh1)>=100) &&  (abs(sq2 - sq1) <= 10) ) {
-			printf("Waring i=%d\n", element[1].num);
-			printf("sh1=%f,sq1=%f,sh2=%f,sq2=%f\n",sh1,sq1,sh2,sq2);
-			}
-			*/
+
 			if ((abs(sh1 - sq1) >= 5) && (abs(sh2 - sq2) <= 1) && (abs(sq2 - sq1) < 10) && (abs(sh2 - sh1) > 1)) {
 				if ((sh1 + sh2 + sq1 + sq2) >= 950) {
 #ifdef DEBUG
@@ -78,12 +77,6 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 					strcpy(point.lon, element[1].lon);
 					strcpy(point.lat, element[1].lat);
 					strcpy(point.time, element[1].time);
-					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
-					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 1;
 					point.point_class = 1;
 					point.sh1 = sh1;
@@ -103,20 +96,12 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 					*###sq2 - sq1：两条线前差
 					*###sh2 - sh1：两条线后差
 					*/
-					//end1.push_back(i);
-					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
 					//point.lon = element[1].lon;
 					strcpy(point.lon, element[1].lon);
 					strcpy(point.lat, element[1].lat);
 					strcpy(point.time, element[1].time);
-					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
-					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 1;
 					point.point_class = 2;
 					point.sh1 = sh1;
@@ -135,19 +120,11 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 #ifdef DEBUG
 					printf("start2 i=%d", element[1].num);
 #endif
-					//start2.push_back(i);
-					//findTP.push_back(i);
 					//存入兴趣点
 					point.num = element[1].num;
 					strcpy(point.lon, element[1].lon);
 					strcpy(point.lat, element[1].lat);
 					strcpy(point.time, element[1].time);
-					//strncpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//strncpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//strncpy(point.time, element[1].time, strlen(element[1].time + 1));
-					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 2;
 					point.point_class = 1;
 					point.sh1 = sh1;
@@ -166,16 +143,12 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 #ifdef DEBUG
 					printf("end2   i=%d", element[1].num);
 #endif
-					//end2.push_back(i);
-					//findTP.push_back(i);
+
 					//存入兴趣点
 					point.num = element[1].num;
 					strcpy(point.lon, element[1].lon);
 					strcpy(point.lat, element[1].lat);
 					strcpy(point.time, element[1].time);
-					//memcpy(point.lon, element[1].lon, strlen(element[1].lon + 1));
-					//memcpy(point.lat, element[1].lat, strlen(element[1].lat + 1));
-					//memcpy(point.time, element[1].time, strlen(element[1].time + 1));
 					point.lineID = 2;
 					point.point_class = 2;
 					point.sh1 = sh1;
@@ -194,7 +167,10 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 		}
 
 	}
-	return 0;
+	if (fun_points.size <= 0) {
+		return SD_CALCULATE_ERROR;
+	}
+	return SUCCESS;
 }
 
 /**处理得到的兴趣点
@@ -371,8 +347,8 @@ int judgmentItem(vector<CellData> vecdata,
 //输入参数：ex_points、vecdata、resultpoint指针（引用）
 //输出参数：resultpoint、ex_points
 int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<DetectPoint> &resultpoint) {
-	float threshold_mean = 0.1;//均值带前后阈值 阈值越大要求前后面相差越大。
-	float threshold_variance = 0.125;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
+	float threshold_mean = 0.2;//均值带前后阈值 阈值越大要求前后面相差越大。
+	float threshold_variance = 0.25;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
 	int sd = 50;//均值带
 	int ed = 5;//缓冲带
 
@@ -388,6 +364,7 @@ int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<
 	float variance_z1_h = 0;
 	float variance_z2_q = 0;
 	float variance_z2_h = 0;
+	DetectPoint dp;
 	for (int i = 0; i + 2 <= ex_points.size(); i++) {
 		//第一个区域
 		if (i == 0) {
@@ -427,8 +404,22 @@ int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
 					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance&&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
-						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+#ifdef DEBUG
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", 
+							variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
 						printf("sss==%d\n", s);
+#endif // DEBUG
+						//添加s至resultpoint
+						dp.loc_num = resultpoint.size() + 1;
+						dp.type = CONNECTOR_JOINT;
+						dp.latitude = vecdata[s].lat;
+						dp.longitude = vecdata[s].lon;
+						dp.stand_value = 0.2;
+						dp.measure_value = (abs(mean_z1_q - mean_z1_h) + abs(mean_z2_q - mean_z2_h))*0.5;
+						dp.qualified = false;
+						resultpoint.push_back(dp);
+
+
 						//resultpoint.push_back();
 					}
 
@@ -474,8 +465,21 @@ int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
 					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance &&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
-						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+#ifdef DEBUG
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n",
+							variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
 						printf("sss==%d\n", s);
+#endif // DEBUG
+						//添加s至resultpoint
+						dp.loc_num = resultpoint.size() + 1;
+						dp.type = CONNECTOR_JOINT;
+						dp.latitude = vecdata[s].lat;
+						dp.longitude = vecdata[s].lon;
+						dp.stand_value = 0.2;
+						dp.measure_value = (abs(mean_z1_q - mean_z1_h) + abs(mean_z2_q - mean_z2_h))*0.5;
+						dp.qualified = false;
+						resultpoint.push_back(dp);
+
 					}
 					s = s + 199;
 				}
@@ -519,8 +523,21 @@ int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
 					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance &&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
-						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
+#ifdef DEBUG
+						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", 
+							variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
 						printf("sss==%d\n", s);
+#endif // DEBUG
+						//添加s至resultpoint
+						dp.loc_num = resultpoint.size() + 1;
+						dp.type = CONNECTOR_JOINT;
+						dp.latitude = vecdata[s].lat;
+						dp.longitude = vecdata[s].lon;
+						dp.stand_value = 0.2;
+						dp.measure_value = (abs(mean_z1_q - mean_z1_h) + abs(mean_z2_q - mean_z2_h))*0.5;
+						dp.qualified = false;
+						resultpoint.push_back(dp);
+
 					}
 					s = s + 199;
 				}
@@ -546,10 +563,14 @@ int sdCalculate(vector<DetectPoint>& Result_Points,
 	vector<fun_point> ex_points;//存放扫描排除点
 	vector<fun_point> fun_points;//存放兴趣点
 	int err = findFunPoint(datalist, fun_points);
-
+	if (err != SUCCESS) {
+		return err;
+	}
 
 	int res = handleFunPoint(fun_points);
-
+	if (res != SUCCESS) {
+		return res;
+	}
 
 	judgmentItem(datalist, fun_points,ex_points, Result_Points);
 
@@ -568,6 +589,7 @@ vector<CellData> cutData(vector<CellData> original_data) {
 	bool needCutStart = false;
 	bool needCutEnd = false;
 	double startCore = 0;
+
 	int endCore = original_data.size();
 	for (vector<CellData>::iterator it = original_data.begin(); it != original_data.end(); it++) {
 		z1.push_back(it->z1);
