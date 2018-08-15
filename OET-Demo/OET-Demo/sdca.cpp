@@ -5,37 +5,27 @@
 #include<algorithm>
 using namespace std;
 
-float mid_z1=0;
-float mid_z2=0;
-vector<celldata> loadData(const char* filename){
-	vector<celldata> incsv;
-	celldata intp;
+vector<CellData> datalist;      //原始数据数组
+int loadData(const char* filename){
+	vector<CellData> original_data;
+	CellData intp;
 	FILE *fp;
 	fp = fopen(filename,"r");
-	char lat_c[32];
-	char lon_c[32];
-	char time_c[32];
 	int i = 0;
 	while (1) {
-		//fscanf(fp,"%d	%f	%f	%s	%s	%s\n",&intp.num, &intp.z1,&intp.z2, &lat_c, &lon_c, &time_c);
-		//intp.lat = lat_c;
-		//intp.lon = lon_c;
-		//intp.time = time_c;
-		//printf("data i=%d\n",i);
 		fscanf(fp, "%d	%f	%f	%s	%s	%s\n", &intp.num, &intp.z1, &intp.z2, &intp.lat, &intp.lon, &intp.time);
 		intp.num = i;
-		incsv.push_back(intp);
-		string time;
-		time = intp.time;
+		original_data.push_back(intp);
 		//cout << i << " " << incsv[i].z1 << " " << incsv[i].z2 << " " << incsv[i].lat << " " << incsv[i].lon<<" " << incsv[i].time << " " << endl;
 		i++;
 		if (feof(fp))break;
 	}
 	fclose(fp);
-	return incsv;
+	datalist =cutData(original_data);
+	return 0;
 }
-int findFunPoint(vector<celldata> vecdata, vector<fun_point> &fun_points) {
-	vector <celldata> element;
+int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
+	vector <CellData> element;
 	float sq1 = 0;
 	float sq2 = 0;
 	float sh1 = 0;
@@ -206,6 +196,16 @@ int findFunPoint(vector<celldata> vecdata, vector<fun_point> &fun_points) {
 	}
 	return 0;
 }
+
+/**处理得到的兴趣点
+**NEED UPDATE!!!
+**对各种情况的兴趣点进行分析（前提，数据已去除掉非轨面部分）
+**情况一：数据为start-end-end型
+**情况二：数据为start-start-end型
+**情况三：数据为start-end-start型，不处理
+**输入参数：ex_points、vecdata、resultpoint指针（引用）
+**输出参数：resultpoint、ex_points
+**/
 int handleFunPoint(vector<fun_point> &fun_points) {
 	//情况一：
 	for (int i = 0; i + 2<fun_points.size(); i++) {
@@ -256,37 +256,25 @@ int handleFunPoint(vector<fun_point> &fun_points) {
 	return 0;
 
 }
-void sdDetect20(vector<celldata> vecdata) {
-	if (vecdata.size() < 1) {
-		printf("data size error!\n");
-		return;
-	}
-	vector<DetectPoint> Result_Points;//存放结果
-	vector<fun_point> ex_points;//存放扫描排除点
-	vector<fun_point> fun_points;//存放兴趣点
-	//vector<fun_point> fun_points_init;//存放兴趣点
-	int err = findFunPoint(vecdata, fun_points);
 
-	/**处理得到的兴趣点
-	**NEED UPDATE!!!
-	**对各种情况的兴趣点进行分析（前提，数据已去除掉非轨面部分）
-	**情况一：数据为start-end-end型
-	**情况二：数据为start-start-end型
-	**情况三：数据为start-end-start型，不处理 
-	**处理的变量：fun_points
-	**/
-	int res = handleFunPoint(fun_points);
+/**
+**判定类别、是否合格等
+**输入参数：fun_points
+**输出参数：ex_points、Result_Points
+**/
+int judgmentItem(vector<CellData> vecdata,
+	vector<fun_point> &fun_points, 
+	vector<fun_point> &ex_points, 
+	vector<DetectPoint> &Result_Points) {
+	//分组合并方案
 
-	
 	float sdq = 0;//检测项前面深度值
 	float sdh = 0;//检测项后面深度值
-	//printf("start sd\n");
-	for (int i = 0; i < fun_points.size()-1; i++) {
+	int dn = 1;
+				  //printf("start sd\n");
+	for (int i = 0; i < fun_points.size() - 1; i++) {
 		DetectPoint resultpoint;
-		resultpoint.loc_num = i;
-		//string lat = fun_points[i].lat;
-		//int lat_len = strlen(fun_points[i].lat);
-		//lat.resize(10);
+		//resultpoint.loc_num = i;
 		resultpoint.latitude = fun_points[i].lat;
 		resultpoint.longitude = fun_points[i].lon;
 		//printf("num=%d,lineID=%d,point_class=%d,sq1=%f,sh1=%f,sq2=%f,sh2=%f\n",
@@ -321,68 +309,68 @@ void sdDetect20(vector<celldata> vecdata) {
 			i++;
 		}
 		else if (fun_points[i].point_class == 1 && fun_points[i + 1].point_class == 2 &&
-				fun_points[i].lineID == 1 && fun_points[i + 1].lineID == 1) {
-				//for (int j = fun_points[i].num - 301; j+100 < fun_points[i].num; j++) {
-				//	sdq = sdq + vecdata[j].z1;
-				//}
-				//for (int k = fun_points[i + 1].num+100; k< fun_points[i + 1].num+301; k++) {
-				//	sdh = sdh + vecdata[k].z1;
-				//}
-				if (abs(fun_points[i].num - fun_points[i + 1].num) <= 100) {
-					for (int j = fun_points[i].num - 151; j + 50 < fun_points[i].num; j++) {
-						sdq = sdq + vecdata[j].z1;
-					}
-					//printf("start cal sdh!\n");
-					for (int k = fun_points[i + 1].num + 50; k< fun_points[i + 1].num + 151; k++) {
-						sdh = sdh + vecdata[k].z1;
-					}
-					resultpoint.type = CONNECTOR_JOINT;
-					resultpoint.stand_value = 0.2;
-				}
-				else {
-					for (int j = fun_points[i].num - 301; j + 100 < fun_points[i].num; j++) {
-						sdq = sdq + vecdata[j].z1;
-					}
-					//printf("start cal sdh!\n");
-					for (int k = fun_points[i + 1].num + 100; k< fun_points[i + 1].num + 301; k++) {
-						sdh = sdh + vecdata[k].z1;
-					}
-					resultpoint.type = EXPAND_JOINT;
-					resultpoint.stand_value = 0.5;
-				}
-				ex_points.push_back(fun_points[i]);
-				ex_points.push_back(fun_points[i + 1]);
-				i++;
-			}
-			if (resultpoint.type == EXPAND_JOINT) {
-				sdq = sdq / 200;
-				sdh = sdh / 200;
-			}
-			else {
-				sdq = sdq / 100;
-				sdh = sdh / 100;
-			}
+			fun_points[i].lineID == 1 && fun_points[i + 1].lineID == 1) {
 
-			//resultpoint.type = CONNECTOR_JOINT;
-			resultpoint.measure_value = abs(sdq-sdh);
-			if (resultpoint.measure_value <= resultpoint.stand_value) {
-				resultpoint.qualified = true;
+			if (abs(fun_points[i].num - fun_points[i + 1].num) <= 100) {
+				for (int j = fun_points[i].num - 151; j + 50 < fun_points[i].num; j++) {
+					sdq = sdq + vecdata[j].z1;
+				}
+				//printf("start cal sdh!\n");
+				for (int k = fun_points[i + 1].num + 50; k< fun_points[i + 1].num + 151; k++) {
+					sdh = sdh + vecdata[k].z1;
+				}
+				resultpoint.type = CONNECTOR_JOINT;
+				resultpoint.stand_value = 0.2;
 			}
 			else {
-				resultpoint.qualified = false;
+				for (int j = fun_points[i].num - 301; j + 100 < fun_points[i].num; j++) {
+					sdq = sdq + vecdata[j].z1;
+				}
+				//printf("start cal sdh!\n");
+				for (int k = fun_points[i + 1].num + 100; k< fun_points[i + 1].num + 301; k++) {
+					sdh = sdh + vecdata[k].z1;
+				}
+				resultpoint.type = EXPAND_JOINT;
+				resultpoint.stand_value = 0.5;
 			}
-			Result_Points.push_back(resultpoint);
-			printf("sdq=%f,sdh=%f,type==%d,measure_value=%f,qualified==%d,lon==%s\n", sdq, sdh,resultpoint.type, resultpoint.measure_value, resultpoint.qualified, resultpoint.longitude.c_str());
-			sdq = 0;
-			sdh = 0;
-		
+			ex_points.push_back(fun_points[i]);
+			ex_points.push_back(fun_points[i + 1]);
+			i++;
+		}
+		if (resultpoint.type == EXPAND_JOINT) {
+			sdq = sdq / 200;
+			sdh = sdh / 200;
+		}
+		else {
+			sdq = sdq / 100;
+			sdh = sdh / 100;
+		}
+		resultpoint.loc_num = dn;
+		dn=dn + 1;
+		resultpoint.measure_value = abs(sdq - sdh);
+		if (resultpoint.measure_value <= resultpoint.stand_value) {
+			resultpoint.qualified = true;
+		}
+		else {
+			resultpoint.qualified = false;
+		}
+		Result_Points.push_back(resultpoint);
+#ifdef DEBUG
+		printf("sdq=%f,sdh=%f,type==%d,measure_value=%f,qualified==%d,lon==%s\n",
+			sdq, sdh, resultpoint.type, resultpoint.measure_value, resultpoint.qualified, resultpoint.longitude.c_str());
+#endif
+		sdq = 0;
+		sdh = 0;
+
 	}
-	//扫描异常点
-	//扫描点前100个点均值与后100个点均值的面差
-	//计算参数
-	//输入参数：ex_points、vecdata、resultpoint指针（引用）
-	//输出参数：resultpoint
-
+	return 0;
+}
+//扫描异常点
+//扫描点前100个点均值与后100个点均值的面差
+//计算参数
+//输入参数：ex_points、vecdata、resultpoint指针（引用）
+//输出参数：resultpoint、ex_points
+int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<DetectPoint> &resultpoint) {
 	float threshold_mean = 0.1;//均值带前后阈值 阈值越大要求前后面相差越大。
 	float threshold_variance = 0.125;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
 	int sd = 50;//均值带
@@ -400,10 +388,10 @@ void sdDetect20(vector<celldata> vecdata) {
 	float variance_z1_h = 0;
 	float variance_z2_q = 0;
 	float variance_z2_h = 0;
-	for (int i=0; i+2<= ex_points.size(); i++) {
+	for (int i = 0; i + 2 <= ex_points.size(); i++) {
 		//第一个区域
-		if (i ==0) {
-			for (int s = sd+ed; s + sd+ed+1 < ex_points[i].num; s=s+20) {
+		if (i == 0) {
+			for (int s = sd + ed; s + sd + ed + 1 < ex_points[i].num; s = s + 20) {
 				//float sum = 0;
 				sum_z1_q = 0;
 				sum_z1_h = 0;
@@ -417,11 +405,11 @@ void sdDetect20(vector<celldata> vecdata) {
 				variance_z1_h = 0;
 				variance_z2_q = 0;
 				variance_z2_h = 0;
-				for (int c = s-(sd+ed); c < s - ed;c++) {
+				for (int c = s - (sd + ed); c < s - ed; c++) {
 					sum_z1_q = sum_z1_q + vecdata[c].z1;
 					sum_z2_q = sum_z2_q + vecdata[c].z2;
 				}
-				for (int c = s+ed; c < s + sd+ed; c++) {
+				for (int c = s + ed; c < s + sd + ed; c++) {
 					sum_z1_h = sum_z1_h + vecdata[c].z1;
 					sum_z2_h = sum_z2_h + vecdata[c].z2;
 				}
@@ -430,17 +418,18 @@ void sdDetect20(vector<celldata> vecdata) {
 				mean_z2_q = sum_z2_q / sd;
 				mean_z2_h = sum_z2_h / sd;
 				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
-					for (int c = s - (sd+ed); c < s - ed; c++) {
-						variance_z1_q = variance_z1_q+pow(abs(vecdata[c].z1- mean_z1_q),2);
-						variance_z2_q = variance_z2_q+pow(abs(vecdata[c].z2 - mean_z2_q), 2);
+					for (int c = s - (sd + ed); c < s - ed; c++) {
+						variance_z1_q = variance_z1_q + pow(abs(vecdata[c].z1 - mean_z1_q), 2);
+						variance_z2_q = variance_z2_q + pow(abs(vecdata[c].z2 - mean_z2_q), 2);
 					}
-					for (int c = s + ed; c < s + sd+ed; c++) {
+					for (int c = s + ed; c < s + sd + ed; c++) {
 						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
 					if (variance_z1_q < threshold_variance&&variance_z2_q < threshold_variance&&variance_z1_h < threshold_variance&&variance_z2_h < threshold_variance) {
 						printf("variance_z1_q=%f,variance_z1_h=%f,variance_z2_q=%f,variance_z2_h=%f\n", variance_z1_q, variance_z1_h, variance_z2_q, variance_z2_h);
 						printf("sss==%d\n", s);
+						//resultpoint.push_back();
 					}
 
 					s = s + 199;
@@ -448,8 +437,8 @@ void sdDetect20(vector<celldata> vecdata) {
 
 			}
 		}
-		else if (i== ex_points.size()-1) {//最后一个区域
-			for (int s = ex_points[i].num+sd+ed; s + sd+ed+1 < vecdata.size()-1; s = s + 20) {
+		else if (i == ex_points.size() - 1) {//最后一个区域
+			for (int s = ex_points[i].num + sd + ed; s + sd + ed + 1 < vecdata.size() - 1; s = s + 20) {
 				//float sum = 0;
 				sum_z1_q = 0;
 				sum_z1_h = 0;
@@ -463,11 +452,11 @@ void sdDetect20(vector<celldata> vecdata) {
 				variance_z1_h = 0;
 				variance_z2_q = 0;
 				variance_z2_h = 0;
-				for (int c = s - (sd+ed); c < s - ed; c++) {
+				for (int c = s - (sd + ed); c < s - ed; c++) {
 					sum_z1_q = sum_z1_q + vecdata[c].z1;
 					sum_z2_q = sum_z2_q + vecdata[c].z2;
 				}
-				for (int c = s + ed; c < s + ed+sd; c++) {
+				for (int c = s + ed; c < s + ed + sd; c++) {
 					sum_z1_h = sum_z1_h + vecdata[c].z1;
 					sum_z2_h = sum_z2_h + vecdata[c].z2;
 				}
@@ -476,11 +465,11 @@ void sdDetect20(vector<celldata> vecdata) {
 				mean_z2_q = sum_z2_q / sd;
 				mean_z2_h = sum_z2_h / sd;
 				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
-					for (int c = s - (sd+ed); c < s - ed; c++) {
+					for (int c = s - (sd + ed); c < s - ed; c++) {
 						variance_z1_q = variance_z1_q + pow(abs(vecdata[c].z1 - mean_z1_q), 2);
 						variance_z2_q = variance_z2_q + pow(abs(vecdata[c].z2 - mean_z2_q), 2);
 					}
-					for (int c = s + ed; c < s + ed+sd; c++) {
+					for (int c = s + ed; c < s + ed + sd; c++) {
 						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
@@ -494,8 +483,8 @@ void sdDetect20(vector<celldata> vecdata) {
 			}
 
 		}
-		else{//其他区域
-			for (int s = ex_points[i].num+ed+sd; s + ed+sd+1 < ex_points[i+1].num; s++) {
+		else {//其他区域
+			for (int s = ex_points[i].num + ed + sd; s + ed + sd + 1 < ex_points[i + 1].num; s++) {
 				sum_z1_q = 0;
 				sum_z1_h = 0;
 				sum_z2_q = 0;
@@ -508,11 +497,11 @@ void sdDetect20(vector<celldata> vecdata) {
 				variance_z1_h = 0;
 				variance_z2_q = 0;
 				variance_z2_h = 0;
-				for (int c = s - (sd+ed); c < s - ed; c++) {
+				for (int c = s - (sd + ed); c < s - ed; c++) {
 					sum_z1_q = sum_z1_q + vecdata[c].z1;
 					sum_z2_q = sum_z2_q + vecdata[c].z2;
 				}
-				for (int c = s + ed; c < s + sd+ed; c++) {
+				for (int c = s + ed; c < s + sd + ed; c++) {
 					sum_z1_h = sum_z1_h + vecdata[c].z1;
 					sum_z2_h = sum_z2_h + vecdata[c].z2;
 				}
@@ -521,11 +510,11 @@ void sdDetect20(vector<celldata> vecdata) {
 				mean_z2_q = sum_z2_q / sd;
 				mean_z2_h = sum_z2_h / sd;
 				if (abs(mean_z1_q - mean_z1_h) >= threshold_mean &&abs(mean_z2_q - mean_z2_h) >= threshold_mean) {
-					for (int c = s - (sd+ed); c < s - ed; c++) {
+					for (int c = s - (sd + ed); c < s - ed; c++) {
 						variance_z1_q = variance_z1_q + pow(abs(vecdata[c].z1 - mean_z1_q), 2);
 						variance_z2_q = variance_z2_q + pow(abs(vecdata[c].z2 - mean_z2_q), 2);
 					}
-					for (int c = s + ed; c < s + ed+sd; c++) {
+					for (int c = s + ed; c < s + ed + sd; c++) {
 						variance_z1_h = variance_z1_h + pow(abs(vecdata[c].z1 - mean_z1_h), 2);
 						variance_z2_h = variance_z2_h + pow(abs(vecdata[c].z2 - mean_z2_h), 2);
 					}
@@ -535,16 +524,42 @@ void sdDetect20(vector<celldata> vecdata) {
 					}
 					s = s + 199;
 				}
-				
+
 			}
 			i++;
 		}
 
 
 	}
+	return 0;
+}
+int sdCalculate(vector<DetectPoint>& Result_Points,
+	float conn_stand, 
+	float expand_stand, 
+	float camera_accuracy) {
+
+	if (datalist.size() < 1) {
+		printf("data size error!\n");
+		return LOAD_DATA_ERROR;
+	}
+
+	vector<fun_point> ex_points;//存放扫描排除点
+	vector<fun_point> fun_points;//存放兴趣点
+	int err = findFunPoint(datalist, fun_points);
+
+
+	int res = handleFunPoint(fun_points);
+
+
+	judgmentItem(datalist, fun_points,ex_points, Result_Points);
+
+
+	int result = scanOddPoint(datalist, ex_points, Result_Points);
+
+
 }
 
-vector<celldata> cutData(vector<celldata> original_data) {
+vector<CellData> cutData(vector<CellData> original_data) {
 	//count(original_data);
 	vector<float> z1;
 	vector<float> z2;
@@ -554,7 +569,7 @@ vector<celldata> cutData(vector<celldata> original_data) {
 	bool needCutEnd = false;
 	double startCore = 0;
 	int endCore = original_data.size();
-	for (vector<celldata>::iterator it = original_data.begin(); it != original_data.end(); it++) {
+	for (vector<CellData>::iterator it = original_data.begin(); it != original_data.end(); it++) {
 		z1.push_back(it->z1);
 		z2.push_back(it->z2);
 	}
@@ -575,8 +590,6 @@ vector<celldata> cutData(vector<celldata> original_data) {
 	if ((z1[z1.size() / 2] - z2[z2.size() / 2]) <= 5) {
 		mid1 = z1[z1.size() / 2];
 		mid2 = z2[z2.size() / 2];
-		mid_z1 = mid1;
-		mid_z2 = mid2;
 	}
 	else {
 		//return error;
@@ -590,7 +603,7 @@ vector<celldata> cutData(vector<celldata> original_data) {
 		int b = 0;
 		int core = -1;
 		//利用mid计算出dt，标记dt小于波动系数的开始坐标
-		for (vector<celldata>::iterator it = original_data.begin(); it != original_data.end(); it++) {
+		for (vector<CellData>::iterator it = original_data.begin(); it != original_data.end(); it++) {
 
 			if (abs(it->z1 - mid1) > 5|| abs(it->z2 - mid2) > 5){
 				b = 0;
@@ -623,7 +636,7 @@ vector<celldata> cutData(vector<celldata> original_data) {
 		int b = 0;
 		int core = -1;
 		//利用mid计算出dt，标记dt小于波动系数(默认为5)的结束坐标
-		for (vector<celldata>::reverse_iterator it = original_data.rbegin(); it != original_data.rend(); it++) {
+		for (vector<CellData>::reverse_iterator it = original_data.rbegin(); it != original_data.rend(); it++) {
 
 			if (abs(it->z1 - mid1) > 5 || abs(it->z2 - mid2) > 5) {
 				b = 0;
@@ -649,7 +662,7 @@ vector<celldata> cutData(vector<celldata> original_data) {
 		}
 		//for_each(original_data.begin(), original_data.begin() + original_data.size() / 2, ForDValue(mid));
 	}
-	vector<celldata> cut_data;
+	vector<CellData> cut_data;
 	cut_data.resize(endCore - startCore);
 	//(*cutResult.resize(endCore - startCore);
 	copy(original_data.begin()+ startCore, original_data.begin()+endCore, cut_data.begin());
