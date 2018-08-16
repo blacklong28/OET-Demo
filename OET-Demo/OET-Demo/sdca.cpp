@@ -167,7 +167,7 @@ int findFunPoint(vector<CellData> vecdata, vector<fun_point> &fun_points) {
 		}
 
 	}
-	if (fun_points.size <= 0) {
+	if (fun_points.size() <= 0) {
 		return SD_CALCULATE_ERROR;
 	}
 	return SUCCESS;
@@ -348,7 +348,7 @@ int judgmentItem(vector<CellData> vecdata,
 //输出参数：resultpoint、ex_points
 int scanOddPoint(vector<CellData> vecdata, vector<fun_point> &ex_points, vector<DetectPoint> &resultpoint) {
 	float threshold_mean = 0.2;//均值带前后阈值 阈值越大要求前后面相差越大。
-	float threshold_variance = 0.25;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
+	float threshold_variance = 0.125;//均值带方差和阈值 (1/2*threshold_mean)*(1/2*threshold_mean)*sd 阈值越小，要求前后越平整。
 	int sd = 50;//均值带
 	int ed = 5;//缓冲带
 
